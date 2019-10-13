@@ -1,0 +1,547 @@
+#include <iostream>
+#include <string.h>
+#include <stdlib.h>
+
+void titulo();
+void limpiar(char palabra[], char acierta[], char todas[], char erradas[], char pista[]);
+void reglas();
+void ingresar(char palabra[], char acierta[], char todas[], char erradas[], char pista[], int *existe);
+void revisar(char palabra[], char acierta[], char todas[], char erradas[], char pista[]);
+void tablero(char palabra[], char acierta[], int *tam, char letra, int aux[], char todas[], char erradas[], int existe, int nopreguntar, char pista[]);
+void chances(char palabra[], char letra, int tam, int *vidas, char erradas[], int *j);
+void jugada(char palabra[], int tam, int *k, int vidas, char *letra, char todas[], char erradas[], int j, int repetido, char acierta[], int nopreguntar, int existe);
+void seleccionadas(int k, char todas[]);
+void erradas1(char erradas[], int j);
+void norepetir(char todas[], char palabra[], char letra, int tam, int *repetido, int k);
+int ganarperder(int tam, char acierta[], char palabra[], int gana);
+void mensajes(int ganar, int tam, int vidas);
+void seguir(int *jugar);
+void menu(int *opcion);
+void mayus(char palabra[], char acierta[], char erradas[], char todas[], int tam);
+void dificultad(char palabra[]);
+void pistas(int *nopreguntar, int existe);
+
+using namespace std;
+
+#define max 400
+
+int main(){
+
+int i, j, k, tam, vidas, aux[100], p, repetido, gana, ganar, opcion, jugar, nopreguntar, existe;
+char palabra[400], acierta[100], letra, todas[100], erradas[100], pista[100];
+
+do{
+
+menu(&opcion);
+
+switch(opcion)
+{
+	
+ case 1: 
+
+do{
+ titulo();	
+limpiar(palabra, acierta, todas, erradas, pista);
+existe = 0;
+ingresar(palabra, acierta, todas, erradas, pista, &existe);
+mayus(palabra, acierta, erradas, todas, tam);
+k = 0;
+j = 0;
+vidas = 6;
+nopreguntar = 0;
+letra='\0';
+
+system("cls");
+
+while(vidas>0 or gana!=tam-1)
+{
+	
+titulo();
+tablero(palabra, acierta, &tam, letra, aux, todas, erradas, existe, nopreguntar, pista);
+chances(palabra, letra, tam, &vidas, erradas, &j);
+ganar=ganarperder(tam, acierta, palabra, gana);
+
+	if(vidas==0 or ganar==tam-1)		//condicion para ganar o perder
+	{
+		system("cls");
+		
+		mensajes(ganar, tam, vidas);		
+		
+		cout<<"\t"<<"=============================================="<<endl;
+		cout<<"\t   "<<"LA PALABRA ERA: "<<palabra<<endl;
+		cout<<"\t"<<"=============================================="<<endl;
+
+		break;
+				
+	}
+	
+pistas(&nopreguntar, existe);	
+titulo();
+tablero(palabra, acierta, &tam, letra, aux, todas, erradas, existe, nopreguntar, pista);
+jugada(palabra, tam, &k, vidas, &letra, todas, erradas, j, repetido, acierta, nopreguntar, existe);
+
+}
+
+seguir(&jugar);
+
+}while(jugar!=2);
+
+	break;
+	
+	case 2: 
+	
+	system("cls");
+	reglas();	
+	
+	break;
+	
+	case 3:
+		
+	break;
+	
+	default: 
+	
+		cout<<"\n"<<"\t"<<"Opcion no valida."<<endl;
+	
+}
+
+}while(opcion!=3);
+
+
+	return 0;
+}
+
+
+void titulo()
+{
+	
+cout<<"\t                            "<<"*******************************************"<<endl;
+cout<<"\n"<<"\t                                          "<<"A H O R C A D O"<<endl;
+cout<<"\n"<<"\t                            "<<"*******************************************"<<endl;
+		
+}
+
+void reglas()
+{
+
+cout<<"  "<<endl;	
+cout<<"\n"<<"\t"<<"\t"<<"\t"<<"                             REGLAS: "<<endl;
+cout<<"\t"<<"-----------------------------------------------------------------------------------------------------"<<endl;	
+cout<<"\t"<<"1. Escriba una palabra sin espacios y simbolos."<<endl;
+cout<<"\n"<<"\t"<<"2. Ingrese una cadena de longitud mayor a 1 y menor que 100."<<endl;
+cout<<"\n"<<"\t"<<"3. No Ingrese mas de una letra por jugada."<<endl;	
+cout<<"\n"<<"\t"<<"4. Se pierde cuando vidas sea igual a cero."<<endl;
+cout<<"\n"<<"\t"<<"5. Se gana cuando las letras ingresadas coincide con la palabra ingresada y vidas sea mayor a cero."<<endl;	
+cout<<"\t"<<"-----------------------------------------------------------------------------------------------------"<<endl;	
+	
+}
+
+void limpiar(char palabra[], char acierta[], char todas[], char erradas[], char pista[])
+{
+int i;
+
+	for(i=0; i<max ; i++)
+	{
+		palabra[i] = '\0';
+		acierta[i] = '\0';				//reiniciar las cadenas a caracter nulo
+		todas[i] = '\0';
+		erradas[i] = '\0';
+		pista[i] = '\0';
+	}
+	
+}
+
+void ingresar(char palabra[], char acierta[], char todas[], char erradas[], char pista[], int *existe)
+{
+	int i, opcion2;
+
+	cout<<"\n"<<"  "<<" Consejo: leer las reglas antes de empezar a jugar."<<endl;	
+	cout<<"\n"<<"\n"<<"\t"<<"Ingrese una palabra: ";
+	
+	do{
+		
+	cin.getline(palabra, 400);		//recibe la cadena ingresada
+	
+	revisar(palabra, acierta, todas, erradas, pista);		//invoca subprograma que revisa la cadena
+		
+	}while(strlen(palabra)<2 || strlen(palabra)>100);		//palabra mayor a 1 y menor a 100 caracteres
+
+	cout<<"\n"<<"  "<<"¿Deseas escribir una pista?"<<endl;
+	cout<<"----------------------------------"<<endl;
+	cout<<"  "<<"1. Si"<<endl;
+	cout<<"  "<<"2. No "<<endl;
+	cout<<"\n"<<"  "<<"Opcion: ";
+	cin>>opcion2;
+
+	while(!cin)
+	{
+	cin.clear();
+	cin.ignore();
+	cout<<"Ingrese una opcion valida."<<endl;
+	cout<<"Opcion: ";
+	cin>>opcion2;	
+	}			
+	
+		if(opcion2==1)		//si el usuario elige escribir pista: 
+		{
+			*existe = 1;
+			cout<<"\n"<<"\t"<<"     Escribir pista: ";			
+			
+			cin.getline(pista, 100);
+			cin.getline(pista, 100);
+		}
+
+}
+
+void revisar(char palabra[], char acierta[], char todas[], char erradas[], char pista[])
+{
+	int i;
+	
+	for(i=0; i<strlen(palabra); i++)		//revisa caracter a caracter
+	{
+		while(palabra[i]=='%' || palabra[i]=='+' || palabra[i]=='-' || palabra[i]=='&' || palabra[i]=='|' || palabra[i]=='#' || palabra[i]=='@' 
+		|| palabra[i]=='!'|| palabra[i]=='$'|| palabra[i]=='/'|| palabra[i]=='('|| palabra[i]==')'|| palabra[i]=='=' || palabra[i]=='?' || palabra[i]=='¿'
+		 || palabra[i]=='*' || palabra[i]=='´' || palabra[i]=='{' || palabra[i]=='}' || palabra[i]=='[' || palabra[i]==']' || palabra[i]==','
+		  || palabra[i]=='.' || palabra[i]=='-'  || palabra[i]=='_' || palabra[i]=='¡' || palabra[i]=='<' || palabra[i]=='>' || palabra[i]==':' 
+		   || palabra[i]=='+' || palabra[i]=='~' || palabra[i]==' ' || strlen(palabra)<2 || strlen(palabra)>100)
+		{
+			limpiar(palabra,acierta, todas, erradas, pista);		
+			
+				cout<<"\n"<<"\t"<<"Error, ingrese una palabra que cumpla con los requisitos: ";		//revisa que la cadena no contenga simbolos
+				
+				cin.getline(palabra, 400);
+				
+			i = 0;
+		}
+	}
+	
+}
+
+void tablero(char palabra[], char acierta[], int *tam, char letra, int aux[], char todas[], char erradas[], int existe, int nopreguntar, char pista[])
+{
+int i,j;
+
+ *tam = strlen(palabra);		//tam es el tamanio de la palabra
+ cout<<"\n"<<" PALABRA: "<<endl;
+ cout<<"--------------------------------------------"<<endl;
+
+ letra = toupper(letra);		//la letra jugada se convierte a mayuscula
+
+	for(i=1; i<=*tam-1; i++)
+	{
+						
+		if(letra==palabra[i])		//si la letra ingresada coincide con alguna letra de palabra se guarda y se marca con 1
+		{
+			acierta[i] = letra;	
+			
+			aux[i] = 1;			
+		}
+	}
+	
+	mayus(palabra, acierta, erradas, todas, *tam);		//se convierten en mayusculas todas las cadenas de caracteres
+	
+ 	cout<<"   "<<palabra[0];		//muestra la primera letra de la palabra
+	
+	for(i=1; i<=*tam-1; i++)
+	{
+		if(aux[i]==1)		//si la posicion está marcada con 1 entonces es una letra acertada
+		{
+			cout<<acierta[i];	//se muestra la letra acertada
+		}
+		
+			else
+			{			
+				cout<<" _ ";
+			}
+	}
+	
+ cout<<endl<<"--------------------------------------------"<<endl;
+
+	dificultad(palabra);		//muestra el nivel de dificultad de la palabra
+	
+	if(existe!=1)
+	{
+		cout<<"\n"<<" . Pista: No hay pista"<<endl;	
+	}	
+		else if(existe==1 && nopreguntar==1)
+		{
+			cout<<"\n"<<" . Pista: "<<pista<<endl;	
+		}	
+		
+			else 
+			{
+				cout<<"\n"<<" . Pista: No descubierta"<<endl;
+			}
+}
+
+void chances(char palabra[], char letra, int tam, int *vidas, char erradas[], int *j)	
+{
+
+int i, bandera = 0;
+
+letra = toupper(letra);
+
+	for(i=1; i<=tam-1; i++)
+	{
+		if(letra!=palabra[i])
+		{
+			bandera++;			//si la letra ingresada no coincide con ninguna letra de la palabra entonces...
+		}
+	}
+	
+	if(bandera==tam-1)
+	{
+		*vidas=*vidas-1;		//Decrementa en 1 la cantidad de vidas
+		
+		erradas[*j] = letra;		//la letra errada se guarda en un arreglo para mostrarlo
+		
+		*j=*j+1;
+	}
+	
+}
+
+void jugada(char palabra[], int tam, int *k, int vidas, char *letra, char todas[], char erradas[], int j, int repetido, char acierta[], int nopreguntar, int existe)
+{
+
+ 
+ cout<<"\n"<<"-------------------------------------------"<<endl;
+cout<<" JUGADA: "<<endl;
+cout<<"-------------------------------------------"<<endl;
+
+cout<<"  "<<"Vidas: "<<vidas<<endl;		//muestra las vidas disponibles
+
+mayus(palabra, acierta, erradas, todas, tam);	//convierte todas las cadenas de caracteres en mayuscula
+seleccionadas(*k, todas);	//muestra todas las letras seleccionadas (erradas y acertadas)
+erradas1(erradas, j); //muestra las letras erradas
+
+cout<<endl<<"-------------------------------------------"<<endl;
+
+
+cout<<"\n"<<"  "<<"Ingrese letra: ";
+
+do{
+	
+cin>>*letra;
+
+norepetir(todas, palabra, *letra, tam, &repetido, *k);		//invoca subprograma para no repetir letra
+
+}while(repetido==1);	//se hace hasta que la letra no se repita
+
+todas[*k] = *letra;		//guarda todas las letras ingresadas
+
+*k=*k+1;
+
+	system("cls");
+	
+}
+
+void seleccionadas(int k, char todas[])
+{
+int i;
+
+
+cout<<"\n"<<"  "<<"Letras seleccionadas: ";
+
+	for(i=0; i<k+1; i++)
+	{
+	cout<<todas[i]<<" ";
+	}
+	
+}
+
+
+void erradas1(char erradas[], int j)
+{
+int i;
+
+cout<<endl<<"\n"<<"  "<<"Letras incorrectas: ";
+
+	for(i=0; i<j+1; i++)
+	{
+		
+	cout<<erradas[i]<<" ";
+	
+	}
+	
+}
+
+void norepetir(char todas[], char palabra[], char letra, int tam, int *repetido, int k)
+{
+	int i;
+
+*repetido = 0;
+
+letra = toupper(letra);
+	
+	for(i=0; i<k+1; i++)
+	{
+		if(letra==todas[i])		//si la letra ingresada conincide con una del arreglo entonces está repetida
+		{					
+			*repetido = 1;	//bandera para saber si repite o no
+		}
+		
+	}
+		if(*repetido==1)
+		{
+			cout<<"  "<<"Ya ingresaste esa letra, intenta con otra."<<endl;	
+		}	
+					
+}
+
+int ganarperder(int tam, char acierta[], char palabra[], int gana)
+{
+int i;
+	
+	for(i=1; i<=tam-1; i++)
+	{
+		if(acierta[i]==palabra[i])
+		{
+			gana=gana+1;
+		}
+	}	
+
+	return gana;		
+}
+
+void mensajes(int ganar, int tam, int vidas)
+{
+	
+	if(ganar==tam-1 && vidas>0)
+	{
+			cout<<"\n"<<"\t"<<"=============================================="<<endl;
+			cout<<"\n"<<"\t"<<"!FELICIDADES, HAS LOGRADO ADIVINAR LA PALABRA!"<<endl;
+			cout<<"\n"<<"\t"<<"=============================================="<<endl;
+	}	
+
+		else if(vidas==0)
+		{
+			cout<<"\n"<<"\t"<<"=============================================="<<endl;
+			cout<<"\n"<<"\t"<<"!FALLASTE, NO HAS PODIDO ADIVINAR LA PALABRA!"<<endl;
+			cout<<"\n"<<"\t"<<"=============================================="<<endl;	
+		}	
+	
+}
+
+void seguir(int *jugar)
+{
+
+		cout<<"\n"<<" ¿Desea volver a jugar?"<<endl;
+		cout<<"----------------------------------"<<endl;
+		cout<<"  "<<"1. Si"<<endl;
+		cout<<"  "<<"2. No"<<endl;
+		cout<<"\n"<<"opcion: ";
+		cin>>*jugar;
+		
+	while(!cin)
+	{
+		cout<<"  Ingrese una opcion valida."<<endl;
+		cout<<"\n"<<"opcion: ";
+		cin.clear();
+		cin.ignore();
+		cin>>*jugar;
+	}
+		system("cls");
+}
+
+void menu(int *opcion)
+{
+cout<<"\n"<<"\t    "<<"MENU PRINCIPAL"<<endl;
+cout<<"\t"<<"========================"<<endl;
+cout<<"\n"<<"\t"<<" 1. Iniciar partida"<<endl;	
+cout<<"\n"<<"\t"<<" 2. Reglas del jeugo"<<endl;	
+cout<<"\n"<<"\t"<<" 3. salir"<<endl;
+cout<<"\t"<<"========================"<<endl;	
+cout<<"\n"<<"\t"<<"Opcion: ";
+cin>>*opcion;
+
+	while(!cin)
+	{
+		cout<<"\n"<<"  Ingrese una opcion valida."<<endl;
+		cout<<"\n"<<"\t"<<"Opcion: ";
+		cin.clear();
+		cin.ignore();
+		cin>>*opcion;
+	}
+		system("cls");
+}
+
+void mayus(char palabra[], char acierta[], char erradas[], char todas[], int tam)
+{
+	
+int i;
+
+	for(i=0; i<100; i++)
+	{
+		
+	palabra[i] = toupper(palabra[i]);
+	
+	acierta[i] = toupper(acierta[i]);		//convertir de minuscula a mayuscula
+	
+	erradas[i] = toupper(erradas[i]);
+	
+	todas[i] = toupper(todas[i]);
+	
+	}
+				
+}
+
+void dificultad(char palabra[])
+{
+
+int taman;
+
+taman = strlen(palabra);
+
+if(taman<=6)
+{
+	cout<<"\n"<<" . Nivel de dificultad: Bajo"<<endl;
+}
+	else if(taman>6 && taman<9)
+	{
+		cout<<"\n"<<" . Nivel de dificultad: Medio"<<endl;
+	}
+		else if(taman>9)
+		{
+			cout<<"\n"<<" . Nivel de dificultad: Alto"<<endl;	
+		}
+	
+}
+
+void pistas(int *nopreguntar, int existe)
+{
+	
+int opcion3;
+
+if(existe==1)
+{
+
+	if(*nopreguntar==0)
+	{
+cout<<"\n"<<"--------------------------------------"<<endl;
+cout<<"  ¿Deseas revelar la pista ahora?"<<endl;
+cout<<"--------------------------------------"<<endl;
+cout<<" 1. Si "<<endl;
+cout<<" 2. No "<<endl;
+cout<<"\n"<<"  Opcion: ";
+
+cin>>opcion3;
+
+while(!cin)
+{
+	cin.clear();
+	cin.ignore();
+	cout<<"\n"<<" Ingrese una opcion valida."<<endl;
+	cout<<"\n"<<" Opcion: ";
+	cin>>opcion3;
+}
+
+		if(opcion3==1)
+		{
+			*nopreguntar = 1;		//Bandera para saber si el usuario ha revelado la pista o no
+		}
+		
+	}
+}
+	system("cls");
+
+}
